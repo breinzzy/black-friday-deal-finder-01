@@ -1,28 +1,33 @@
-// DealHunt 2026 — the wiring. main.js is the only file that touches the
+// DealHunt 2026 v2 — the wiring. main.js is the only file that touches the
 // address bar and the page: it reads the hash into a filter state, asks
 // filters.js for the deals that match, asks views.js for the HTML, and wires
 // the search box and the selects back to the hash. Routes:
 //
-//   #/                                  the deal board
+//   #/                                  the deal board (masthead + hero + mirage strip + board)
 //   #/?q=airpods&cat=Audio&store=Target&min=40&sort=discount
 //                                       the board, filtered
+//   #/mirage                            Mirage watch — the deals we refused to list
+//   #/how                               How we check
 //   #/deal/<id>                         one deal, with its verdict evidence
 //
 // window.__shotReady is false while a page renders and true once it is on
 // screen, so a screenshot script knows when to capture.
 
 import { CHECKED_LABEL, deals, CATEGORIES, STORES } from "./data.js";
-import { applyFilters, countBy, maxDiscount, newLowCount, totalSavings } from "./filters.js";
-import { dealPage, listPage, missingPage } from "./views.js";
+import { applyFilters, countBy, maxDiscount, newLowCount, percentOff, totalSavings } from "./filters.js";
+import { dealPage, howPage, listPage, miragePage, missingPage } from "./views.js";
 
 const app = document.getElementById("app");
 const catCounts = countBy(deals, "category");
 const storeCounts = countBy(deals, "store");
+const cuts = deals.filter((d) => d.was).map((d) => percentOff(d));
 const stats = {
   total: deals.length,
   newLows: newLowCount(deals),
   max: maxDiscount(deals),
   saved: Math.round(totalSavings(deals)),
+  stores: STORES.length,
+  avg: Math.round(cuts.reduce((a, b) => a + b, 0) / cuts.length),
 };
 
 function readState() {
@@ -78,9 +83,9 @@ function wireToolbar(state) {
 
 function render(wire = true) {
   window.__shotReady = false;
-  const match = location.hash.match(/^#\/deal\/([^/?]+)/);
-  if (match) {
-    const found = deals.find((d) => d.id === decodeURIComponent(match[1]));
+  const dealMatch = location.hash.match(/^#\/deal\/([^/?]+)/);
+  if (dealMatch) {
+    const found = deals.find((d) => d.id === decodeURIComponent(dealMatch[1]));
     document.title = `${found ? found.title : "Not found"} | DealHunt 2026`;
     if (!found) {
       app.innerHTML = missingPage();
@@ -90,6 +95,12 @@ function render(wire = true) {
         .slice(0, 3);
       app.innerHTML = dealPage(found, siblings);
     }
+  } else if (/^#\/mirage/.test(location.hash)) {
+    document.title = "Mirage watch — deals we refused | DealHunt 2026";
+    app.innerHTML = miragePage();
+  } else if (/^#\/how/.test(location.hash)) {
+    document.title = "How we check | DealHunt 2026";
+    app.innerHTML = howPage();
   } else {
     const state = readState();
     const shown = applyFilters(deals, state);
@@ -107,7 +118,7 @@ function render(wire = true) {
     }
   }
   document.querySelector("footer .checked-line").textContent =
-    `Prices checked ${CHECKED_LABEL} (13:30 WIB). Verify at the store before you buy — Black Friday prices move fast.`;
+    `Prices checked ${CHECKED_LABEL} (13:30–20:30 WIB). Verify at the store before you buy — Black Friday prices move fast.`;
   window.scrollTo(0, 0);
   window.__shotReady = true;
 }
