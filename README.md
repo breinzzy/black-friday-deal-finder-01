@@ -4,7 +4,7 @@
 [![rank](https://make.fun/badge/black-friday-deal-finder-01/breinzzy/black-friday-deal-finder-01/rank.svg)](https://make.fun/bounty/black-friday-deal-finder-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=black-friday-deal-finder-01)
 [![reward](https://make.fun/badge/black-friday-deal-finder-01/breinzzy/black-friday-deal-finder-01/reward.svg)](https://make.fun/bounty/black-friday-deal-finder-01?utm_source=github&utm_medium=readme&utm_campaign=black-friday-deal-finder-01)
 
-DealHunt 2026 — a Black Friday and Cyber Monday deal finder with 37 real deals, each price checked at its store on Friday 27 November 2026. Search, filter by category, store and discount, sort by biggest discount, biggest saving, lowest price or best verdict — and every deal carries an honest verdict (NEW LOW, STRONG, GOOD, MODEST or ROUTINE) with the evidence for it, the source the price was read in, and the check time. No invented prices: what is not discounted (new PS5 and Xbox Series X consoles) is not listed at all.
+DealHunt 2026 — a Black Friday and Cyber Monday deal finder with 52 real deals, each price checked at its store on Friday 27 November 2026. Search, filter by category, store and discount, sort by biggest discount, biggest saving, lowest price or best verdict — and every deal carries an honest verdict (NEW LOW, STRONG, GOOD, MODEST or ROUTINE) with the evidence for it, the source the price was read in, and the check time. A Mirage watch lists the prices we checked and refused to list — inflated was-prices, thin cuts, third-party sellers. No invented prices: what is not discounted (new PS5 and Xbox Series X consoles) is not listed at all.
 
 ## Run it
 
