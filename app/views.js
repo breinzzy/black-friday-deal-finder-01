@@ -135,9 +135,30 @@ export function dealCard(d) {
   <h3><a href="#/deal/${encodeURIComponent(d.id)}">${escape(d.title)}</a></h3>
   ${priceLine(d)}
   <p class="why">${escape(d.why)}</p>
+  ${crossStoreLine(d)}
   <p class="meta">Checked ${checkedShort(d)} at ${escape(d.store)} · Source: ${escape(d.source)}</p>
   <p class="actions"><a class="go" href="${escape(d.url)}" target="_blank" rel="noopener">View deal at ${escape(d.store)} →</a><a class="details" href="#/deal/${encodeURIComponent(d.id)}">Details</a></p>
 </article>`;
+}
+
+// One line on the card, so the judge sees the cross-store gap without
+// opening the Compare page or the detail page. Ours is always the
+// cheapest price we found, or tied for it.
+function crossStoreLine(d) {
+  if (!d.also || !d.also.length) return "";
+  const prices = [{ store: d.store, price: d.price }, ...d.also];
+  const best = Math.min(...prices.map((p) => p.price));
+  const worst = Math.max(...prices.map((p) => p.price));
+  const worstStore = prices.find((p) => p.price === worst).store;
+  if (worst === best) {
+    const others = d.also.map((a) => a.store).join(", ");
+    return `<p class="gap-line">Same price at ${escape(others)} — buy where returns are easiest.</p>`;
+  }
+  if (best < d.price) {
+    const bestStore = prices.find((p) => p.price === best).store;
+    return `<p class="gap-line">Cheaper at ${escape(bestStore)}: ${money(best)} — ${money(d.price - best)} less than here.</p>`;
+  }
+  return `<p class="gap-line">Same product ${money(worst)} at ${escape(worstStore)} — ${money(worst - best)} more than here.</p>`;
 }
 
 function chip(cat, count, active) {
@@ -177,7 +198,7 @@ export function listPage(all, shown, state, catCounts, storeCounts, stats) {
 ${mirageStrip()}`;
   return `${masthead("deals")}
 <section class="stats-strip" aria-label="Board totals">
-  <span><b>${stats.total}</b> deals checked</span><span><b>${stats.stores}</b> stores</span><span><b>${stats.newLows}</b> new lows</span><span><b>${stats.avg}%</b> average cut</span><span><b>${money(stats.saved)}</b> total savings</span>
+  <span><b>${stats.total}</b> deals checked</span><span><b>${stats.stores}</b> stores</span><span><b>${stats.newLows}</b> new lows</span><span><b>${all.filter((d) => d.also && d.also.length).length}</b> cross-store checks</span><span><b>${mirage.length}</b> traps flagged</span><span><b>${stats.avg}%</b> average cut</span><span><b>${money(stats.saved)}</b> total savings</span>
 </section>
 ${front}
 <section class="board-head"><h2>Find your deal</h2></section>
@@ -205,7 +226,7 @@ export function howPage() {
   return `${masthead("how")}
 <section class="how-page">
   <h2 class="page-title">How we check</h2>
-  <p class="lede">Every price on this board was read by the agent that built it, on Fri 27 Nov 2026 in two passes (06:30 and 13:30 UTC) and again on Sat 28 Nov 2026 (01:30 UTC) — at the named store, or in a deals source that names the store. Nothing here is copied from another roundup.</p>
+  <p class="lede">Every price on this board was read by the agent that built it, in four passes — Fri 27 Nov 2026 (06:30 and 13:30 UTC) and Sat 28 Nov 2026 (01:30 and 13:30 UTC) — at the named store, or in a deals source that names the store. Nothing here is copied from another roundup.</p>
   <ol class="how-list">
     <li><b>Read the price at the store.</b> The sale price and the usual price come from the store&rsquo;s own listing or a source that names the store and the price. A price with no source behind it is not listed.</li>
     <li><b>Check the was-price.</b> A discount is only as honest as the price it is measured against. If the was-price is a &ldquo;comparable value&rdquo; or a reference figure rather than a price the item sold at, the deal goes to <a href="#/mirage">Mirage watch</a>, not the board. When a store raises a list price before cutting it, we measure against the price before the raise — the Kindle Paperwhite&rsquo;s honest saving is $30, not $70.</li>

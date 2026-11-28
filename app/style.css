@@ -181,6 +181,7 @@ footer p { margin: 6px 0; }
 .save-line { margin: 2px 0 8px; font-size: 14px; }
 .save { color: var(--green); font-weight: 700; }
 .why { margin: 0 0 10px; font-size: 14px; flex: 1; }
+.gap-line { margin: 0 0 10px; font-size: 13.5px; font-weight: 700; color: var(--green); }
 .meta { margin: 0 0 10px; font-size: 12.5px; color: var(--ink-soft); }
 .actions { display: flex; gap: 14px; margin: 0; font-size: 14px; }
 .go { font-weight: 700; color: var(--red); }
