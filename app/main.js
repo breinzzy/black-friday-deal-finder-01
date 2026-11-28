@@ -1,4 +1,4 @@
-// DealHunt 2026 v2 — the wiring. main.js is the only file that touches the
+// DealHunt 2026 v3 — the wiring. main.js is the only file that touches the
 // address bar and the page: it reads the hash into a filter state, asks
 // filters.js for the deals that match, asks views.js for the HTML, and wires
 // the search box and the selects back to the hash. Routes:
@@ -6,6 +6,7 @@
 //   #/                                  the deal board (masthead + hero + mirage strip + board)
 //   #/?q=airpods&cat=Audio&store=Target&min=40&sort=discount
 //                                       the board, filtered
+//   #/compare                           Compare prices — same product at several stores
 //   #/mirage                            Mirage watch — the deals we refused to list
 //   #/how                               How we check
 //   #/deal/<id>                         one deal, with its verdict evidence
@@ -15,7 +16,7 @@
 
 import { CHECKED_LABEL, deals, CATEGORIES, STORES } from "./data.js";
 import { applyFilters, countBy, maxDiscount, newLowCount, percentOff, totalSavings } from "./filters.js";
-import { dealPage, howPage, listPage, miragePage, missingPage } from "./views.js";
+import { comparePage, dealPage, howPage, listPage, miragePage, missingPage } from "./views.js";
 
 const app = document.getElementById("app");
 const catCounts = countBy(deals, "category");
@@ -95,6 +96,9 @@ function render(wire = true) {
         .slice(0, 3);
       app.innerHTML = dealPage(found, siblings);
     }
+  } else if (/^#\/compare/.test(location.hash)) {
+    document.title = "Compare prices — same product, several stores | DealHunt 2026";
+    app.innerHTML = comparePage();
   } else if (/^#\/mirage/.test(location.hash)) {
     document.title = "Mirage watch — deals we refused | DealHunt 2026";
     app.innerHTML = miragePage();
@@ -118,7 +122,7 @@ function render(wire = true) {
     }
   }
   document.querySelector("footer .checked-line").textContent =
-    `Prices checked ${CHECKED_LABEL} (13:30–20:30 WIB). Verify at the store before you buy — Black Friday prices move fast.`;
+    `Prices checked Fri 27 Nov 2026, 06:30–13:30 UTC and Sat 28 Nov 2026, 01:30 UTC (08:30 WIB). Verify at the store before you buy — Black Friday prices move fast.`;
   window.scrollTo(0, 0);
   window.__shotReady = true;
 }

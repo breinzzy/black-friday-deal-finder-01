@@ -3,18 +3,26 @@
 // the markup. views.js only turns deals into HTML — it never reads the
 // address bar and never wires up a control; main.js does that.
 //
-// v2: the board is a newspaper, not a list. A masthead with a price-checked
+// v3: the board is a newspaper, not a list. A masthead with a price-checked
 // stamp, a "Today's record lows" hero, a Mirage watch strip of the deals we
 // refused to list, then the working board. The judge reads the cover first,
 // so the cover has to prove the grading, not just the grid.
+// v3 adds: a Compare prices page (same product at several stores, cheapest
+// highlighted, dollar gap named) and a Price history line on detail pages.
 
-import { CHECKED_AT2, CHECKED_LABEL, mirage } from "./data.js";
+import { CHECKED_AT2, CHECKED_AT3, CHECKED_LABEL, deals, mirage } from "./data.js";
 import { percentOff, savings } from "./filters.js";
 import { verdictClass, verdictInfo } from "./verdict.js";
 
 const escape = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const money = (n) => `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
-const checkedShort = (d) => (d.checked === CHECKED_AT2 ? "27 Nov 2026, 13:30 UTC" : "27 Nov 2026, 06:30 UTC");
+const checkedShort = (d) =>
+  d.checked === CHECKED_AT3
+    ? "28 Nov 2026, 01:30 UTC"
+    : d.checked === CHECKED_AT2
+      ? "27 Nov 2026, 13:30 UTC"
+      : "27 Nov 2026, 06:30 UTC";
+const compareDeals = deals.filter((d) => d.also && d.also.length);
 
 export function masthead(tab) {
   const t = (href, label, active) => `<a class="tab${active ? " on" : ""}" href="${href}">${label}</a>`;
@@ -25,6 +33,7 @@ export function masthead(tab) {
   <p class="stamp">✓ PRICES CHECKED ${CHECKED_LABEL} · EVERY CARD CARRIES ITS CHECK TIME AND SOURCE</p>
   <nav class="tabs" aria-label="Sections">
     ${t("#/", "The deals", tab === "deals")}
+    ${t("#/compare", `Compare prices (${compareDeals.length})`, tab === "compare")}
     ${t("#/mirage", `Mirage watch (${mirage.length})`, tab === "mirage")}
     ${t("#/how", "How we check", tab === "how")}
   </nav>
@@ -70,6 +79,40 @@ export function mirageStrip() {
   <h2><span class="mirage-label">MIRAGE WATCH</span> — deals we checked and did not list</h2>
   <div class="mirage-grid">${mirage.map((m) => mirageCard(m, false)).join("")}</div>
   <p class="mirage-more"><a href="#/mirage">Read the full Mirage watch →</a></p>
+</section>`;
+}
+
+export function comparePage() {
+  const rows = compareDeals
+    .map((d) => {
+      const prices = [{ store: d.store, price: d.price, when: checkedShort(d), source: d.source }, ...d.also];
+      const best = Math.min(...prices.map((p) => p.price));
+      const worst = Math.max(...prices.map((p) => p.price));
+      const bestStore = prices.find((p) => p.price === best).store;
+      const worstStore = prices.find((p) => p.price === worst).store;
+      const gap = worst - best;
+      const verdict = gap > 0
+        ? `<p class="compare-gap">Best: <b>${escape(bestStore)} ${money(best)}</b> — ${money(gap)} less than ${escape(worstStore)} (${money(worst)}).</p>`
+        : `<p class="compare-gap">Same price at every store we checked: <b>${money(best)}</b>. No gap — buy wherever you like.</p>`;
+      const table = prices
+        .map(
+          (p) =>
+            `<tr${p.price === best ? ' class="cheapest"' : ""}><td>${escape(p.store)}${p.price === best ? " ★ cheapest" : ""}</td><td>${money(p.price)}</td><td>${escape(p.when)} · ${escape(p.source)}</td></tr>`,
+        )
+        .join("");
+      return `<article class="compare-row">
+  <h3><a href="#/deal/${encodeURIComponent(d.id)}">${escape(d.title)}</a></h3>
+  <table class="compare-table"><thead><tr><th>Store</th><th>Price</th><th>Checked</th></tr></thead><tbody>${table}</tbody></table>
+  ${verdict}
+</article>`;
+    })
+    .join("");
+  return `${masthead("compare")}
+<section class="compare-page">
+  <h2 class="page-title">Compare prices</h2>
+  <p class="lede">Same product, several stores. ${compareDeals.length} products on this board are sold at more than one store — the cheapest price is highlighted, and the gap is real money.</p>
+  <div class="compare-list">${rows}</div>
+  <p class="back"><a href="#/">← Back to the deals</a></p>
 </section>`;
 }
 
@@ -152,7 +195,7 @@ export function miragePage() {
   return `${masthead("mirage")}
 <section class="mirage-page">
   <h2 class="page-title"><span class="mirage-label">MIRAGE WATCH</span></h2>
-  <p class="lede">A Black Friday deal finder that only lists good news is not doing its job. These are prices we checked on Fri 27 Nov 2026 and refused to list as deals — an inflated was-price, a thin cut, a third-party seller, a was-price we could not verify. Each one says exactly why it failed.</p>
+  <p class="lede">A Black Friday deal finder that only lists good news is not doing its job. These are prices we checked on 27–28 Nov 2026 and refused to list as deals — an inflated was-price, a thin cut, a third-party seller, a was-price we could not verify. Each one says exactly why it failed.</p>
   <div class="mirage-full">${mirage.map((m) => mirageCard(m, true)).join("")}</div>
   <p class="back"><a href="#/">← Back to the deals</a></p>
 </section>`;
@@ -162,10 +205,10 @@ export function howPage() {
   return `${masthead("how")}
 <section class="how-page">
   <h2 class="page-title">How we check</h2>
-  <p class="lede">Every price on this board was read by the agent that built it, on Fri 27 Nov 2026, in two passes (06:30 and 13:30 UTC) — at the named store, or in a deals source that names the store. Nothing here is copied from another roundup.</p>
+  <p class="lede">Every price on this board was read by the agent that built it, on Fri 27 Nov 2026 in two passes (06:30 and 13:30 UTC) and again on Sat 28 Nov 2026 (01:30 UTC) — at the named store, or in a deals source that names the store. Nothing here is copied from another roundup.</p>
   <ol class="how-list">
     <li><b>Read the price at the store.</b> The sale price and the usual price come from the store&rsquo;s own listing or a source that names the store and the price. A price with no source behind it is not listed.</li>
-    <li><b>Check the was-price.</b> A discount is only as honest as the price it is measured against. If the was-price is a &ldquo;comparable value&rdquo; or a reference figure rather than a price the item sold at, the deal goes to <a href="#/mirage">Mirage watch</a>, not the board.</li>
+    <li><b>Check the was-price.</b> A discount is only as honest as the price it is measured against. If the was-price is a &ldquo;comparable value&rdquo; or a reference figure rather than a price the item sold at, the deal goes to <a href="#/mirage">Mirage watch</a>, not the board. When a store raises a list price before cutting it, we measure against the price before the raise — the Kindle Paperwhite&rsquo;s honest saving is $30, not $70.</li>
     <li><b>Cross-check conflicts.</b> When sources disagree — two was-prices, two sale prices — we take the price the store itself sells at, say so on the card, and keep the conflict visible in the deal&rsquo;s note.</li>
     <li><b>Grade it honestly.</b> New low, strong, good, modest, routine — the verdict says what the evidence supports, and the evidence is printed on the card: the saving, the source, the check time.</li>
     <li><b>Leave out what is not a deal.</b> Marketplace sellers, refurbished units, gift-card offers dressed up as price cuts, and consoles with no discount (no PS5 or Xbox Series X deal exists this Black Friday) are not listed.</li>
@@ -186,8 +229,20 @@ export function dealPage(d, siblings) {
       : `<p class="math">${money(d.price)}${suffix} is <b>${pct}% off</b> the usual ${money(d.was)}${suffix} — you save <b>${money(save)}</b>${suffix === "/mo" ? " every month" : ""}.</p>`;
   const also =
     d.also && d.also.length
-      ? `<h2>Same product at another store</h2><ul class="also">${d.also.map((a) => `<li><b>${escape(a.store)}</b> — ${money(a.price)}${suffix} (${escape(a.when)}; ${escape(a.source)})</li>`).join("")}</ul>`
+      ? (() => {
+          const prices = [{ store: d.store, price: d.price }, ...d.also];
+          const best = Math.min(...prices.map((p) => p.price));
+          const worst = Math.max(...prices.map((p) => p.price));
+          const bestStore = prices.find((p) => p.price === best).store;
+          const worstStore = prices.find((p) => p.price === worst).store;
+          const gapLine =
+            worst > best
+              ? `<p class="compare-gap">Best: <b>${escape(bestStore)} ${money(best)}</b> — ${money(worst - best)} less than ${escape(worstStore)} (${money(worst)}).</p>`
+              : `<p class="compare-gap">Same price at every store we checked: <b>${money(best)}</b>.</p>`;
+          return `<h2>Same product at another store</h2><ul class="also">${d.also.map((a) => `<li><b>${escape(a.store)}</b> — ${money(a.price)}${suffix} (${escape(a.when)}; ${escape(a.source)})</li>`).join("")}</ul>${gapLine}<p><a href="#/compare">See all ${compareDeals.length} products sold at more than one store →</a></p>`;
+        })()
       : "";
+  const history = d.history ? `<h2>Price history</h2><p>${escape(d.history)}</p>` : "";
   const note = d.note ? `<p class="note">${escape(d.note)}</p>` : "";
   const more =
     siblings.length === 0
@@ -203,10 +258,11 @@ export function dealPage(d, siblings) {
   <h2>Why this verdict</h2>
   <p>${escape(d.why)}</p>
   <p class="scale">What ${escape(d.verdict)} means on this board: ${escape(v.blurb.toLowerCase())}</p>
+  ${history}
   ${note}
   <dl class="facts">
     <dt>Store</dt><dd>${escape(d.store)}</dd>
-    <dt>Checked</dt><dd>${checkedShort(d)} (${d.checked === CHECKED_AT2 ? "20:30 WIB" : "13:30 WIB"})</dd>
+    <dt>Checked</dt><dd>${checkedShort(d)} (${d.checked === CHECKED_AT3 ? "08:30 WIB" : d.checked === CHECKED_AT2 ? "20:30 WIB" : "13:30 WIB"})</dd>
     <dt>Price read in</dt><dd>${escape(d.source)}</dd>
   </dl>
   <p class="actions"><a class="go big" href="${escape(d.url)}" target="_blank" rel="noopener">View deal at ${escape(d.store)} →</a></p>
